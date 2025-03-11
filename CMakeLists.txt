@@ -12,21 +12,22 @@ endif()
 
 # Source files
 set(SOURCES
-    main.c
-    shell.c
-    input.c
-    execute.c
-    builtins.c
-    prompt.c
-    pipes.c
-    signals.c
-    utils.c
-    jobs.c
-    job_builtins.c
+    src/main.c
+    src/shell.c
+    src/input.c
+    src/execute.c
+    src/builtins.c
+    src/prompt.c
+    src/pipes.c
+    src/signals.c
+    src/utils.c
+    src/jobs.c
+    src/job_builtins.c
 )
 
 # Build executable
 add_executable(BeaudyShell ${SOURCES})
+target_include_directories(BeaudyShell PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Installation
 install(TARGETS BeaudyShell DESTINATION bin)
