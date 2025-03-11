@@ -1,8 +1,9 @@
 // /include/jobs.h - Job control
 #pragma once
 
-#include "beaudyshell.h"
 #include <sys/types.h>
+#include <stdbool.h>
+#include "beaudyshell.h"
 
 /**
  * Enumeration of possible job states
@@ -45,17 +46,19 @@ void init_job_control(ShellState *state);
  * @param state Shell state containing job list
  * @param pgid Process group ID
  * @param cmd Command string
+ * @return Pointer to the newly created job, or NULL on failure
  */
-void add_job(ShellState *state, pid_t pgid, const char *cmd);
+Job *add_job(ShellState *state, pid_t pgid, const char *cmd);
 
 /**
  * Update job status based on process status change
  * 
  * @param state Shell state containing job list
- * @param pid Process group ID
+ * @param pid Process ID
  * @param status New job status
+ * @return Pointer to the updated job, or NULL if not found
  */
-void update_job_status(ShellState *state, pid_t pid, JobStatus status);
+Job *update_job_status(ShellState *state, pid_t pid, JobStatus status);
 
 /**
  * Remove completed jobs from the list
@@ -84,10 +87,19 @@ Job *find_job(ShellState *state, int job_id);
  * Find a job by process group ID
  * 
  * @param state Shell state containing job list
- * @param pid Process group ID to find
+ * @param pgid Process group ID to find
  * @return Pointer to job or NULL if not found
  */
-Job *find_job_by_pid(ShellState *state, pid_t pid);
+Job *find_job_by_pgid(ShellState *state, pid_t pgid);
+
+/**
+ * Find the most recent job with given status
+ * 
+ * @param state Shell state containing job list
+ * @param status Job status to match
+ * @return Pointer to the most recent job with matching status, or NULL if not found
+ */
+Job *find_recent_job_by_status(ShellState *state, JobStatus status);
 
 /**
  * Clean up all jobs in the job list
