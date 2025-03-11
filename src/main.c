@@ -4,9 +4,10 @@
 #include "jobs.h"
 #include <unistd.h>
 
-int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)),
-         char *envp[]) {
-  extern char **environ;
+int main(int argc, char *argv[], char *envp[]) {
+  (void)argc; // Suppress unused parameter warning
+  (void)argv; // Suppress unused parameter warning
+  
   ShellState state;
 
   // Process command line arguments
@@ -19,7 +20,7 @@ int main(int argc __attribute__((unused)), char *argv[] __attribute__((unused)),
   init_job_control(&state);
 
   // Set up signal handlers
-  setup_signals();
+  setup_signals(&state);
 
   // Run the shell
   run_shell(&state);
