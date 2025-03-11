@@ -41,6 +41,13 @@ BeaudyShell
 .idea/
 *.swp
 *.swo
+.cache
+/.cache
+/cache
 
 # Build directory
 build/
+
+# OS files
+.DS_Store
+/DS_Store
