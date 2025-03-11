@@ -1,32 +1,99 @@
-// jobs.h - Job control
-#ifndef JOBS_H
-#define JOBS_H
+// /include/jobs.h - Job control
+#pragma once
 
-#include "beaudyShell.h"
+#include "beaudyshell.h"
 #include <sys/types.h>
 
-typedef enum { JOB_RUNNING, JOB_STOPPED, JOB_DONE } JobStatus;
+/**
+ * Enumeration of possible job states
+ */
+typedef enum { 
+    JOB_RUNNING,  // Job is running in foreground or background
+    JOB_STOPPED,  // Job is stopped (suspended)
+    JOB_DONE      // Job has completed
+} JobStatus;
 
+/**
+ * Structure representing a job (process group)
+ */
 typedef struct Job {
-  int job_id;
-  pid_t pgid;    // Process group ID
-  char *command; // Command string
-  JobStatus status;
-  struct Job *next; // For linked list
+    int job_id;       // Job ID (for user reference)
+    pid_t pgid;       // Process group ID
+    char *command;    // Command string
+    JobStatus status; // Current job status
+    struct Job *next; // For linked list
 } Job;
 
-typedef struct {
-  Job *first_job;
-  int next_job_id;
+/**
+ * Structure representing a list of jobs
+ */
+typedef struct JobList {
+    Job *first_job;   // First job in the list
+    int next_job_id;  // Next job ID to assign
 } JobList;
 
-void init_job_control(JobList *jobs);
-void add_job(JobList *jobs, pid_t pgid, const char *cmd);
-void update_job_status(JobList *jobs, pid_t pid, JobStatus status);
-void remove_done_jobs(JobList *jobs);
-void print_jobs(JobList *jobs);
-Job *find_job(JobList *jobs, int job_id);
-Job *find_job_by_pid(JobList *jobs, pid_t pid);
-void cleanup_jobs(JobList *jobs);
+/**
+ * Initialize job control subsystem
+ * 
+ * @param state Shell state containing job list
+ */
+void init_job_control(ShellState *state);
 
-#endif /* JOBS_H */
+/**
+ * Add a new job to the job list
+ * 
+ * @param state Shell state containing job list
+ * @param pgid Process group ID
+ * @param cmd Command string
+ */
+void add_job(ShellState *state, pid_t pgid, const char *cmd);
+
+/**
+ * Update job status based on process status change
+ * 
+ * @param state Shell state containing job list
+ * @param pid Process group ID
+ * @param status New job status
+ */
+void update_job_status(ShellState *state, pid_t pid, JobStatus status);
+
+/**
+ * Remove completed jobs from the list
+ * 
+ * @param state Shell state containing job list
+ */
+void remove_done_jobs(ShellState *state);
+
+/**
+ * Print all jobs in the job list
+ * 
+ * @param state Shell state containing job list
+ */
+void print_jobs(ShellState *state);
+
+/**
+ * Find a job by job ID
+ * 
+ * @param state Shell state containing job list
+ * @param job_id Job ID to find
+ * @return Pointer to job or NULL if not found
+ */
+Job *find_job(ShellState *state, int job_id);
+
+/**
+ * Find a job by process group ID
+ * 
+ * @param state Shell state containing job list
+ * @param pid Process group ID to find
+ * @return Pointer to job or NULL if not found
+ */
+Job *find_job_by_pid(ShellState *state, pid_t pid);
+
+/**
+ * Clean up all jobs in the job list
+ * 
+ * @param state Shell state containing job list
+ */
+void cleanup_jobs(ShellState *state);
+
+/* JOBS_H */
