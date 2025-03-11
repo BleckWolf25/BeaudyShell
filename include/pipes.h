@@ -1,9 +1,11 @@
-// pipes.h - Pipe handling
-#ifndef PIPES_H
-#define PIPES_H
+// /include/pipes.h - Pipe handling
+#pragma once
 
-#include "beaudyShell.h"
+#include "beaudyshell.h"
 
+/**
+ * Structure representing a command pipeline with redirection
+ */
 typedef struct {
   char ***commands;   // Array of command argument arrays
   int cmd_count;      // Number of commands in the pipeline
@@ -12,9 +14,29 @@ typedef struct {
   bool append_output; // Whether to append to output file
 } Pipeline;
 
+/**
+ * Parse an input string into a pipeline structure
+ * 
+ * @param input Input string to parse
+ * @return Dynamically allocated Pipeline structure, or NULL on error.
+ *         Caller must free this memory using free_pipeline().
+ */
 Pipeline *parse_pipeline(char *input);
+
+/**
+ * Execute a pipeline of commands
+ * 
+ * @param pipeline Pipeline structure to execute
+ * @param state Current shell state
+ * @return Exit status of the last command in the pipeline
+ */
 int execute_pipeline(Pipeline *pipeline, ShellState *state);
+
+/**
+ * Free the memory allocated for a pipeline structure
+ * 
+ * @param pipeline Pipeline structure to free
+ */
 void free_pipeline(Pipeline *pipeline);
 
-#endif /* PIPES_H */
-
+/* PIPES_H */
