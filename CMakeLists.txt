@@ -26,14 +26,14 @@ set(SOURCES
 )
 
 # Build executable
-add_executable(BeaudyShell ${SOURCES})
+add_executable(BeaudyShell ${SOURCES} ${HEADERS})
 target_include_directories(BeaudyShell PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Installation
 install(TARGETS BeaudyShell DESTINATION bin)
 
 # Documentation
-option(BUILD_DOCS "Build documentation" OFF)
+option(BUILD_DOCS "Build documentation" ON)
 if(BUILD_DOCS)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
