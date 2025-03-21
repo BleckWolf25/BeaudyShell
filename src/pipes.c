@@ -12,8 +12,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-JobList job_list;
-
 // Parse input string into a pipeline structure
 Pipeline *parse_pipeline(char *input) {
   if (!input || input[0] == '\0') return NULL;
@@ -30,8 +28,27 @@ Pipeline *parse_pipeline(char *input) {
     .cmd_count = 0,
     .input_file = NULL,
     .output_file = NULL,
-    .append_output = false
+    .append_output = false,
+    .original_command = NULL,
+    .background = false
   };
+
+  // Store original command
+  pipeline->original_command = str_duplicate(input);
+  if (!pipeline->original_command) {
+    free(pipeline);
+    return NULL;
+  }
+
+  // Check for background execution
+  size_t len = strlen(input);
+  if (len > 0 && input[len-1] == '&') {
+    pipeline->background = true;
+    input[len-1] = '\0'; // Remove & from command
+    trim_string(input);
+  } else {
+    pipeline->background = false;
+  }
 
   char *input_copy = str_duplicate(input);
   if (!input_copy) {
@@ -193,8 +210,8 @@ int execute_pipeline(Pipeline *pipeline, ShellState *state) {
       setpgid(pid, pid);
       
       // Add job to job list if in background
-      if (background) {
-          add_job(&job_list, pid, input); // Store original command
+      if (pipeline->background) {
+          add_job(state, pid, pipeline->original_command); // Store original command
       } else {
           // Give terminal control to foreground process group
           tcsetpgrp(STDIN_FILENO, pid);
@@ -270,5 +287,6 @@ void free_pipeline(Pipeline *pipeline) {
 
   free(pipeline->input_file);
   free(pipeline->output_file);
+  free(pipeline->original_command);
   free(pipeline);
 }

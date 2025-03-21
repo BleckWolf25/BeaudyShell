@@ -2,17 +2,21 @@
 #pragma once
 
 #include "beaudyshell.h"
+#include <stdbool.h>
 
 /**
  * Structure representing a command pipeline with redirection
  */
-typedef struct {
-  char ***commands;   // Array of command argument arrays
-  int cmd_count;      // Number of commands in the pipeline
-  char *input_file;   // Input redirection file
-  char *output_file;  // Output redirection file
-  bool append_output; // Whether to append to output file
+typedef struct Pipeline {
+  char ***commands;           // Array of command argument arrays
+  int cmd_count;              // Number of commands in the pipeline
+  char *input_file;           // Input redirection file
+  char *output_file;          // Output redirection file
+  bool append_output;         // Whether to append to output file
+  char *original_command;     // Original command string
+  bool background;            // Background execution flag
 } Pipeline;
+
 
 /**
  * Parse an input string into a pipeline structure

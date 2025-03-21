@@ -4,6 +4,11 @@
 #include "beaudyshell.h"
 
 /**
+ * Built-in commands supported by the shell.
+ * Each returns an exit status (0 for success, non-zero for failure).
+ */
+
+/**
  * Change the current working directory
  * 
  * @param args Command arguments (args[0] is "cd", args[1] is the directory)
@@ -74,5 +79,23 @@ int builtin_fg(char **args, ShellState *state);
  * @return Exit status (0 for success, non-zero for failure)
  */
 int builtin_bg(char **args, ShellState *state);
+
+/**
+ * Check if a command is a built-in command
+ * 
+ * @param cmd Command name to check
+ * @return true if command is built-in, false otherwise
+ */
+bool is_builtin(const char *cmd);
+
+/**
+ * Execute a built-in command
+ * 
+ * @param args Array of command arguments
+ * @param arg_count Number of arguments
+ * @param state Current shell state
+ * @return Exit status of command
+ */
+int handle_builtin(char **args, int arg_count, ShellState *state);
 
 /* BUILTINS_H */

@@ -11,6 +11,8 @@
 #define MAX_HOSTNAME_LEN 64      // Maximum hostname length
 #define MAX_USERNAME_LEN 32      // Maximum username length
 #define MAX_PROMPT_LEN 512       // Maximum prompt length
+#define MAX_INPUT_LENGTH 4096    // Maximum length of input
+#define MAX_JOBS 64              // Maximum number of jobs
 
 // Forward declarations
 typedef struct JobList JobList;
@@ -19,13 +21,15 @@ typedef struct JobList JobList;
  * Structure containing the shell's state
  */
 typedef struct {
+  bool interactive;                // Interactive mode flag (changed from char)
+  char *current_dir;               // Current working directory
   char cwd[MAX_PATH_LEN];          // Current working directory
   bool running;                    // Shell running state
   char username[MAX_USERNAME_LEN]; // Current username
   char hostname[MAX_HOSTNAME_LEN]; // Machine hostname
   int last_exit_code;              // Exit code of last command
   char **environ;                  // Environment variables
-  bool interactive;                // Running in interactive mode?
+  bool background;                 // Background execution flag
   JobList *jobs;                   // Job control list
 } ShellState;
 

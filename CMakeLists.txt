@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
-project(BeaudyShell VERSION 0.1.0 LANGUAGES C)
+project(BeaudyShell 
+        VERSION 0.1.0 
+        DESCRIPTION "A fast, interactive Unix shell"
+        HOMEPAGE_URL "https://github.com/BleckWolf25/BeaudyShell"
+        LANGUAGES C)
 
 # Set C standard
 set(CMAKE_C_STANDARD 11)
@@ -26,11 +30,83 @@ set(SOURCES
 )
 
 # Build executable
-add_executable(BeaudyShell ${SOURCES} ${HEADERS})
+add_executable(BeaudyShell ${SOURCES})
 target_include_directories(BeaudyShell PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Installation
-install(TARGETS BeaudyShell DESTINATION bin)
+# Installation configuration
+include(GNUInstallDirs)
+install(TARGETS BeaudyShell
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        COMPONENT runtime)
+
+# Install documentation
+install(FILES 
+        "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+        "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}
+        COMPONENT docs)
+
+# Packaging configuration
+set(CPACK_PACKAGE_NAME "BeaudyShell")
+set(CPACK_PACKAGE_VENDOR "BleckWolf25")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A fast, interactive Unix shell implementation")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+
+# macOS specific configuration
+if(APPLE)
+    set(CPACK_GENERATOR "productbuild")
+    set(CPACK_SYSTEM_NAME "macOS")
+    
+    # Create a scripts directory in the build folder
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/scripts)
+    
+    # Create a postinstall script
+    file(WRITE ${CMAKE_BINARY_DIR}/scripts/postinstall "
+#!/bin/bash
+# Add BeaudyShell to /etc/shells
+if ! grep -q '/usr/local/bin/BeaudyShell' /etc/shells; then
+    echo '/usr/local/bin/BeaudyShell' >> /etc/shells
+fi
+
+# Create symlink in /usr/local/bin
+ln -sf '/Applications/BeaudyShell.app/Contents/MacOS/BeaudyShell' '/usr/local/bin/BeaudyShell'
+")
+    
+    # Make the postinstall script executable
+    execute_process(COMMAND chmod +x ${CMAKE_BINARY_DIR}/scripts/postinstall)
+    
+    # Configure the productbuild
+    set(CPACK_PRODUCTBUILD_IDENTIFIER "com.bleckwolf25.beaudyshell")
+    set(CPACK_PRODUCTBUILD_SCRIPTS ${CMAKE_BINARY_DIR}/scripts)
+endif()
+
+# Linux specific configuration
+if(UNIX AND NOT APPLE)
+    set(CPACK_GENERATOR "DEB;RPM")
+    
+    # DEB package settings
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "BleckWolf25")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "shells")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.14)")
+    
+    # RPM package settings
+    set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+    set(CPACK_RPM_PACKAGE_GROUP "System Environment/Shells")
+    set(CPACK_RPM_PACKAGE_REQUIRES "glibc >= 2.14")
+endif()
+
+# Component configuration
+set(CPACK_COMPONENTS_ALL runtime docs)
+set(CPACK_COMPONENT_RUNTIME_DISPLAY_NAME "BeaudyShell Runtime")
+set(CPACK_COMPONENT_DOCS_DISPLAY_NAME "Documentation")
+set(CPACK_COMPONENT_RUNTIME_DESCRIPTION "BeaudyShell executable and required files")
+set(CPACK_COMPONENT_DOCS_DESCRIPTION "Documentation files")
+
+include(CPack)
 
 # Documentation
 option(BUILD_DOCS "Build documentation" ON)

@@ -1,9 +1,15 @@
 // /src/builtins.c - Built-in command implementations
 #include "beaudyshell.h"
+#include "builtins.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+// Add external declarations for job control builtins
+extern int builtin_jobs(char **args, ShellState *state);
+extern int builtin_fg(char **args, ShellState *state);
+extern int builtin_bg(char **args, ShellState *state);
 
 // CD command
 int builtin_cd(char **args, ShellState *state __attribute__((unused))) {
@@ -79,4 +85,44 @@ int builtin_echo(char **args, ShellState *state __attribute__((unused))) {
   }
   printf("\n");
   return 0;
+}
+
+bool is_builtin(const char *cmd) {
+    static const char *builtins[] = {
+        "cd", "exit", "pwd", "help", "echo", "jobs", "fg", "bg", NULL
+    };
+    
+    for (const char **builtin = builtins; *builtin; builtin++) {
+        if (strcmp(cmd, *builtin) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int handle_builtin(char **args, int arg_count, ShellState *state) {
+    if (!args || !args[0]) return 1;
+
+    struct {
+        const char *name;
+        int (*func)(char **args, ShellState *state);
+    } builtin_commands[] = {
+        {"cd", builtin_cd},
+        {"exit", builtin_exit},
+        {"pwd", builtin_pwd},
+        {"help", builtin_help},
+        {"echo", builtin_echo},
+        {"jobs", builtin_jobs},
+        {"fg", builtin_fg},
+        {"bg", builtin_bg},
+        {NULL, NULL}
+    };
+
+    for (int i = 0; builtin_commands[i].name != NULL; i++) {
+        if (strcmp(args[0], builtin_commands[i].name) == 0) {
+            return builtin_commands[i].func(args, state);
+        }
+    }
+    
+    return 1;
 }

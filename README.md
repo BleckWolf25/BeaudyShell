@@ -7,50 +7,99 @@ A fast, interactive Unix shell implementation written in C.
 - Command execution using fork/exec
 - Pipes and file redirection (e.g., `cmd1 | cmd2`, `cmd > file`, `cmd < file`)
 - Built-in commands (`cd`, `exit`, `pwd`, `help`, `echo`)
+- Job control and background processes
 - Colorful prompt showing username, hostname, and current directory
 - Clean, modular codebase following modern C practices
 
-## Building
+## Installation
+
+### macOS
 
 ```bash
-make
+# Option 1: Using the installer package
+curl -O https://github.com/BleckWolf25/BeaudyShell/releases/latest/download/BeaudyShell.pkg
+sudo installer -pkg BeaudyShell.pkg -target /
+
+# Option 2: Building from source
+git clone https://github.com/BleckWolf25/BeaudyShell.git
+cd BeaudyShell
+mkdir build && cd build
+cmake ..
+cmake --build .
+sudo cpack -G productbuild
+sudo installer -pkg BeaudyShell.pkg -target /
 ```
 
-For debug build with additional information:
+### Linux
+
+#### Debian/Ubuntu
 
 ```bash
-make debug
+# Option 1: Using the pre-built package
+curl -O https://github.com/BleckWolf25/BeaudyShell/releases/latest/download/beaudyshell_0.1.0_amd64.deb
+sudo dpkg -i beaudyshell_0.1.0_amd64.deb
+
+# Option 2: Building from source
+git clone https://github.com/BleckWolf25/BeaudyShell.git
+cd BeaudyShell
+mkdir build && cd build
+cmake ..
+cmake --build .
+cpack -G DEB
+sudo dpkg -i beaudyshell_0.1.0_amd64.deb
 ```
 
-## Usage
+#### Red Hat/Fedora
 
 ```bash
-./BeaudyShell
+# Option 1: Using the pre-built package
+curl -O https://github.com/BleckWolf25/BeaudyShell/releases/latest/download/beaudyshell-0.1.0.x86_64.rpm
+sudo rpm -i beaudyshell-0.1.0.x86_64.rpm
+
+# Option 2: Building from source
+git clone https://github.com/BleckWolf25/BeaudyShell.git
+cd BeaudyShell
+mkdir build && cd build
+cmake ..
+cmake --build .
+cpack -G RPM
+sudo rpm -i beaudyshell-0.1.0.x86_64.rpm
 ```
 
-## Project Structure
+## Project Structure (Simplified)
 
-- `main.c` - Entry point
-- `shell.c` - Core shell functions
-- `input.c` - Input handling and parsing
-- `execute.c` - Command execution
-- `builtins.c` - Built-in command implementations
-- `prompt.c` - Shell prompt handling
-- `pipes.c` - Pipe and redirection implementation
-- `signals.c` - Signal handling
-- `utils.c` - Utility functions
+```zsh
+.
+├── include/        # Header files
+├── src/            # Source files
+├── docs/           # Documentation
+└── CMakeLists.txt  # Build configuration
+```
 
-## Roadmap
+## Development
 
-1. ✅ Core shell functionality (fork/exec/wait)
-2. ✅ File redirection and pipes
-3. ⬜ Job control and signal handling
-4. ⬜ Variable expansion and quoting
-5. ⬜ Interactive features (history, tab completion)
+### Requirements
+
+- CMake 3.10 or higher
+- C compiler (GCC/Clang)
+- Make or Ninja build system
+
+### Building for Development
+
+```bash
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake --build .
+```
+
+### Running Tests
+
+```bash
+cd build
+ctest --output-on-failure
+```
 
 ## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
