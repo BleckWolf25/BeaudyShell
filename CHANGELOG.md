@@ -8,6 +8,11 @@ Format follows [Keep a Changelog](http://keepachangelog.com/), versioning follow
 
 ## [Unreleased]
 
+## [0.1.1], 2026-07-16
+
+### Fixed
+- Fixed workflow permissions and action versions in CI and Release configurations.
+
 ## [0.1.0], 2026-07-16
 
 ### Added
