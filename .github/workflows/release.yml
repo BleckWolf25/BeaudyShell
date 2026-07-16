@@ -83,7 +83,7 @@ jobs:
       # Upload artifact so the release job can attach them
       # -----------------------------------------------------------------------
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: beaudy-${{ matrix.asset_suffix }}
           path: |
