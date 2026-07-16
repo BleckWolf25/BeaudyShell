@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug BeaudyShell (Debug)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/beaudy-entry",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build Workspace (Debug)",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            }
+        },
+        {
+            "name": "Debug BeaudyShell (Release)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/release/beaudy-entry",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Build Workspace (Release)",
+            "env": {
+                "RUST_BACKTRACE": "1"
+            }
+        }
+    ]
+}

@@ -1,0 +1,21 @@
+# @file rustfmt.toml
+#
+# @version 1.0.0
+# @author BleckWolf25
+# @license MIT
+#
+# @summary Rust formatter configuration for the BeaudyShell project.
+#
+# @description
+# This file configures the rustfmt tool to enforce consistent code formatting across
+# the codebase, setting maximum line width, Rust edition, and enabling automatic
+# import and module reordering for cleaner code organization.
+#
+# @since 16/07/2026
+# @updated 16/07/2026
+#
+# ---------- CONFIGURATION
+max_width = 100
+edition = "2024"
+reorder_imports = true
+reorder_modules = true

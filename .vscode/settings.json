@@ -1,0 +1,17 @@
+{
+    "editor.formatOnSave": true,
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.formatOnSave": true
+    },
+    "rust-analyzer.check.command": "clippy",
+    "rust-analyzer.cargo.allTargets": true,
+    "files.exclude": {
+        "**/target": false,
+        "**/.git": true
+    },
+    "search.exclude": {
+        "**/target": true,
+        "**/.git": true
+    }
+}

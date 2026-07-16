@@ -1,0 +1,183 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  BINARY_NAME: beaudy-entry
+
+jobs:
+  # -----------------------------------------------------------------------
+  # Build cross-platform release binaries
+  # -----------------------------------------------------------------------
+  build-release:
+    name: Build, ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: beaudy-entry
+            asset_suffix: linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: beaudy-entry
+            asset_suffix: linux-aarch64
+            cross: true
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: beaudy-entry.exe
+            asset_suffix: windows-x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install Cross (for cross-compilation)
+        if: ${{ matrix.cross }}
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }} -p beaudy-entry
+
+      - name: Build (cross)
+        if: ${{ matrix.cross }}
+        run: cross build --release --target ${{ matrix.target }} -p beaudy-entry
+
+      # -----------------------------------------------------------------------
+      # Compute SHA-256 checksum
+      # -----------------------------------------------------------------------
+      - name: Compute checksum (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          BIN="target/${{ matrix.target }}/release/${{ matrix.artifact_name }}"
+          sha256sum "$BIN" > "$BIN.sha256"
+          cat "$BIN.sha256"
+
+      - name: Compute checksum (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $bin = "target\${{ matrix.target }}\release\${{ matrix.artifact_name }}"
+          $hash = (Get-FileHash $bin -Algorithm SHA256).Hash.ToLower()
+          "$hash  ${{ matrix.artifact_name }}" | Out-File -Encoding ascii "$bin.sha256"
+          Get-Content "$bin.sha256"
+
+      # -----------------------------------------------------------------------
+      # Upload artifact so the release job can attach them
+      # -----------------------------------------------------------------------
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: beaudy-${{ matrix.asset_suffix }}
+          path: |
+            target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+            target/${{ matrix.target }}/release/${{ matrix.artifact_name }}.sha256
+
+  # -----------------------------------------------------------------------
+  # Create the GitHub Release and attach all binaries
+  # -----------------------------------------------------------------------
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Display dist layout
+        run: find dist/ -type f
+
+      # Rename binaries with platform suffix for clarity
+      - name: Rename artifacts
+        run: |
+          mkdir -p release_assets
+          for dir in dist/*/; do
+            suffix="${dir#dist/beaudy-}"
+            suffix="${suffix%/}"
+            for f in "$dir"*; do
+              base=$(basename "$f")
+              ext="${base##*.}"
+              if [ "$ext" = "sha256" ]; then
+                cp "$f" "release_assets/beaudy-${suffix}.sha256"
+              else
+                # Preserve .exe on Windows binaries
+                if echo "$suffix" | grep -q "windows"; then
+                  cp "$f" "release_assets/beaudy-${suffix}.exe"
+                else
+                  cp "$f" "release_assets/beaudy-${suffix}"
+                fi
+              fi
+            done
+          done
+          ls -lh release_assets/
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Read CHANGELOG entry
+        id: changelog
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          # Extract the section for this version from CHANGELOG.md
+          NOTES=$(awk "/^## \[${VERSION}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md)
+          if [ -z "$NOTES" ]; then
+            NOTES="See CHANGELOG.md for details."
+          fi
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          name: BeaudyShell ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## BeaudyShell ${{ steps.get_version.outputs.VERSION }}
+
+            ${{ steps.changelog.outputs.NOTES }}
+
+            ### Installation
+
+            **Linux (x86_64)**
+            ```bash
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.VERSION }}/beaudy-linux-x86_64 -o beaudy
+            chmod +x beaudy
+            sudo mv beaudy /usr/local/bin/beaudy
+            ```
+
+            **Windows (x86_64)**
+            Download `beaudy-windows-x86_64.exe` and place it somewhere on your `%PATH%`.
+
+            ### Verify checksums
+            ```bash
+            sha256sum -c beaudy-linux-x86_64.sha256
+            ```
+          files: release_assets/*
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.VERSION, '-') }}

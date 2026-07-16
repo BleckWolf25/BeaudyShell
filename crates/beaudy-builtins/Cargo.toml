@@ -1,0 +1,25 @@
+# @file Cargo.toml
+#
+# @version 1.0.0
+# @author BleckWolf25
+# @license MIT
+#
+# @summary Package configuration for the beaudy-builtins crate.
+#
+# @description
+# This file defines the beaudy-builtins crate which provides built-in shell commands
+# including directory listing (bls) and help documentation (bhelp) with screen-reader
+# friendly formatting using the ratatui TUI library.
+#
+# @since 16/07/2026
+# @updated 16/07/2026
+#
+# ---------- CONFIGURATION
+[package]
+name = "beaudy-builtins"
+version = "0.1.0"
+edition = "2024"
+
+# ---------- DEPENDENCIES
+[dependencies]
+ratatui = { workspace = true }
