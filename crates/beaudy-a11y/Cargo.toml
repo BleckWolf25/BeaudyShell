@@ -1,0 +1,25 @@
+# @file Cargo.toml
+#
+# @version 1.0.0
+# @author BleckWolf25
+# @license MIT
+#
+# @summary Package configuration for the beaudy-a11y accessibility crate.
+#
+# @description
+# This file defines the beaudy-a11y crate which provides OSC 133 semantic markers
+# for screen reader compatibility, enabling accessible terminal output navigation
+# without external dependencies.
+#
+# @since 16/07/2026
+# @updated 16/07/2026
+#
+# ---------- PACKAGE
+[package]
+name = "beaudy-a11y"
+version = "0.1.0"
+edition = "2024"
+
+# ---------- DEPENDENCIES
+[dependencies]
+# No external dependencies needed yet; will use standard output for ANSI codes

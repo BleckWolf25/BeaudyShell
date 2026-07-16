@@ -1,0 +1,27 @@
+# @file Cargo.toml
+#
+# @version 1.0.0
+# @author BleckWolf25
+# @license MIT
+#
+# @summary Package configuration for the beaudy-entry binary crate.
+#
+# @description
+# This file defines the beaudy-entry crate which serves as the main shell entry point,
+# handling user input, terminal interaction, command history, autocomplete, and
+# coordinating with the router and accessibility crates.
+#
+# @since 16/07/2026
+# @updated 16/07/2026
+#
+# ---------- PACKAGE
+[package]
+name = "beaudy-entry"
+version = "0.1.0"
+edition = "2024"
+
+# ---------- DEPENDENCIES
+[dependencies]
+crossterm = { workspace = true }
+beaudy-router = { path = "../beaudy-router" }
+beaudy-a11y = { path = "../beaudy-a11y" }

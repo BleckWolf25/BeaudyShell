@@ -1,30 +1,33 @@
 # Security Policy
 
+Thank you for helping keep this project secure. As an open‑source project, maintaining a safe environment for users is important, but resources are limited.
+Please review the policy below regarding supported versions and reporting vulnerabilities.
+
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
+Security updates and vulnerability patches are exclusively provided for the latest Long‑Term Support (LTS) release.
+
+| Version | Supported | Notes |
+| ------- | --------- | ----- |
+| > **0.1.0** (current) | Yes | Active support for security vulnerabilities. |
+| < 0.1.0 | ❌ No | Please upgrade to the latest version. |
+
+> ⚠️ **Important:** To report a valid security issue, your environment **must** be actively running on the latest release. Bugs or vulnerabilities found on older, modified, or deprecated branches will not be triaged.
+
+---
 
 ## Reporting a Vulnerability
 
-To report a security vulnerability:
+If you discover a security vulnerability, please **do not** disclose it publicly via GitHub Issues or Pull Requests.
 
-1. **Do not** open a public issue
-2. Email <coutinho4gaming@gmail.com> with:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - (Optional) Suggested fix
+1. **Verify:** Ensure the vulnerability is reproducible on a clean install of version >**2.0.0**.
+2. **Report:** Send a detailed report via email to **<joao.coutinho08@icloud.com>**.
+3. **Include Details:**
+   - A clear description of the vulnerability.
+   - Steps to reproduce (or a Proof‑of‑Concept script/payload).
+   - The potential impact of the exploit.
 
-You'll receive a response within 64 hours acknowledging receipt of your report.
+### Response Timeline
 
-## Security Best Practices
-
-When using BeaudyShell:
-
-1. Keep the shell updated to the latest version
-2. Don't run untrusted scripts
-3. Use appropriate file permissions
-4. Be cautious with environment variables
-5. Review command substitutions carefully
+You will receive an acknowledgment of your report within **48–72 hours**.
+If the vulnerability is verified as valid and within the scope of this project, a patch will be prepared and pushed to the `main` branch as a high priority.

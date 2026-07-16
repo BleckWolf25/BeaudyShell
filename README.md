@@ -1,112 +1,83 @@
 # BeaudyShell
 
-A fast, interactive Unix shell implementation written in C.
+> A modern, extensible, and accessible command‑line shell written in Rust.
 
-## Features
+BeaudyShell provides a rich, interactive REPL experience with syntax highlighting, inline autocomplete, command history, and built‑in utilities such as `cd`, `bhelp`, and `bls`. It also supports OSC 133 accessibility markers for screen‑reader navigation.
 
-- Command execution using fork/exec
-- Pipes and file redirection (e.g., `cmd1 | cmd2`, `cmd > file`, `cmd < file`)
-- Built-in commands (`cd`, `exit`, `pwd`, `help`, `echo`)
-- Job control and background processes
-- Colorful prompt showing username, hostname, and current directory
-- Clean, modular codebase following modern C practices
+## 🚀 Getting Started
 
-## Installation
+### Prerequisites
 
-### macOS
+- **Rust** stable (install via `rustup`)
+- **make** (for the provided Makefile targets)
+
+### Installation
 
 ```bash
-# Option 1: Using the installer package
-curl -O https://github.com/BleckWolf25/BeaudyShell/releases/latest/download/BeaudyShell.pkg
-sudo installer -pkg BeaudyShell.pkg -target /
-
-# Option 2: Building from source
+# Clone the repository
 git clone https://github.com/BleckWolf25/BeaudyShell.git
 cd BeaudyShell
-mkdir build && cd build
-cmake ..
-cmake --build .
-sudo cpack -G productbuild
-sudo installer -pkg BeaudyShell.pkg -target /
+
+# Build the project (debug)
+make build
+
+# Run the shell
+./target/debug/beaudy-shell
 ```
 
-### Linux
-
-#### Debian/Ubuntu
+For an optimized binary:
 
 ```bash
-# Option 1: Using the pre-built package
-curl -O https://github.com/BleckWolf25/BeaudyShell/releases/latest/download/beaudyshell_0.1.0_amd64.deb
-sudo dpkg -i beaudyshell_0.1.0_amd64.deb
-
-# Option 2: Building from source
-git clone https://github.com/BleckWolf25/BeaudyShell.git
-cd BeaudyShell
-mkdir build && cd build
-cmake ..
-cmake --build .
-cpack -G DEB
-sudo dpkg -i beaudyshell_0.1.0_amd64.deb
+make release   # builds with LTO, strip, and opt‑level 3
+./target/release/beaudy-shell
 ```
 
-#### Red Hat/Fedora
+### Quick Start Commands
 
-```bash
-# Option 1: Using the pre-built package
-curl -O https://github.com/BleckWolf25/BeaudyShell/releases/latest/download/beaudyshell-0.1.0.x86_64.rpm
-sudo rpm -i beaudyshell-0.1.0.x86_64.rpm
+- `bhelp` – Show help for built‑in commands and shortcuts.
+- `bls` – List directory contents with type, size, and modification time.
+- `cd <dir>` – Change directory (supports `~` and `-`).
 
-# Option 2: Building from source
-git clone https://github.com/BleckWolf25/BeaudyShell.git
-cd BeaudyShell
-mkdir build && cd build
-cmake ..
-cmake --build .
-cpack -G RPM
-sudo rpm -i beaudyshell-0.1.0.x86_64.rpm
-```
+## 🛠️ Development
 
-## Project Structure (Simplified)
+The project is a multi‑crate workspace:
 
-```zsh
-.
-├── include/        # Header files
-├── src/            # Source files
-├── docs/           # Documentation
-└── CMakeLists.txt  # Build configuration
-```
+- `beaudy-entry` – REPL loop, input handling, syntax highlighting.
+- `beaudy-router` – PTY management, `cd` state, command routing.
+- `beaudy-builtins` – Built‑in commands implementation.
+- `beaudy-a11y` – Accessibility helpers (OSC 133 markers).
 
-## Development
+### Common Makefile Targets
 
-### Requirements
+| Target | Description |
+|--------|-------------|
+| `setup` | Install development dependencies (if any). |
+| `build` | Compile all crates in debug mode. |
+| `release` | Compile with release profile (optimised). |
+| `run` | Build and execute the shell. |
+| `test` | Run all unit tests (`cargo test --workspace`). |
+| `fmt` | Run `cargo fmt --all`. |
+| `lint` | Run `cargo clippy --workspace --all-targets --all-features -D warnings`. |
+| `package` | Build release binary, generate SHA‑256 checksum, and create installer script. |
 
-- CMake 3.10 or higher
-- C compiler (GCC/Clang)
-- Make or Ninja build system
+## 📄 Documentation
 
-### Building for Development
+- **Configuration** – The shell reads `~/.beaudy.toml`. See the file for available options (`prompt_style`, `prompt_color`).
+- **Accessibility** – OSC 133 markers (`A`, `B`, `C`, `D`) enable screen‑reader navigation.
+- **Built‑ins** – `bhelp`, `bls`, and `cd` are implemented in `beaudy-builtins` and `beaudy-router`.
 
-```bash
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build .
-```
+## 🤝 Contributing
 
-### Running Tests
+Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on reporting bugs, suggesting enhancements, and submitting pull requests. By contributing you agree to follow our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-```bash
-cd build
-ctest --output-on-failure
-```
+## 📄 License
 
-## Contributing
+Distributed under the MIT License. See `LICENSE` for details.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 🔒 Security
 
-## License
+If you discover a security vulnerability, please see our [SECURITY.md](SECURITY.md) for reporting instructions.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+---
+
+Built with ❤️ using Rust, crossterm, and portable‑pty.

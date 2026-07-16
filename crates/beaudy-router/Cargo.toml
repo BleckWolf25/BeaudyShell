@@ -1,0 +1,29 @@
+# @file Cargo.toml
+#
+# @version 1.0.0
+# @author BleckWolf25
+# @license MIT
+#
+# @summary Package configuration for the beaudy-router crate.
+#
+# @description
+# This file defines the beaudy-router crate which handles command execution routing,
+# built-in command dispatching, directory change operations, and interactive PTY
+# process management using portable-pty and nom parser.
+#
+# @since 16/07/2026
+# @updated 16/07/2026
+#
+# ---------- PACKAGE
+[package]
+name = "beaudy-router"
+version = "0.1.0"
+edition = "2024"
+
+# ---------- DEPENDENCIES
+[dependencies]
+portable-pty = { workspace = true }
+nom = { workspace = true }
+beaudy-builtins = { path = "../beaudy-builtins" }
+crossterm = { workspace = true }
+libc = "0.2"

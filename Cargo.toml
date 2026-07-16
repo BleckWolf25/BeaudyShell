@@ -1,0 +1,52 @@
+# @file Cargo.toml
+#
+# @version 1.0.0
+# @author BleckWolf25
+# @license MIT
+#
+# @summary Workspace configuration for the BeaudyShell project.
+#
+# @description
+# This file defines the Cargo workspace structure, centralizes dependency management
+# across all crates, configures Rust linting rules with strict safety standards,
+# and sets release build optimization settings for the BeaudyShell terminal emulator.
+#
+# @since 16/07/2026
+# @updated 16/07/2026
+#
+# ---------- WORKSPACE
+[workspace]
+members = [
+    "crates/beaudy-entry",
+    "crates/beaudy-router",
+    "crates/beaudy-builtins",
+    "crates/beaudy-a11y",
+]
+resolver = "2"
+
+# ---------- DEPENDENCIES
+[workspace.dependencies]
+crossterm = "0.29.0"
+portable-pty = "0.9.0"
+ratatui = "0.30.2"
+nom = "8.0.0"
+
+# ---------- RUST LINTING
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_variables = "warn"
+unused_imports = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+enum_glob_use = "deny"
+
+# ---------- DISTRIBUTION
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
