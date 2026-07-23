@@ -12,12 +12,12 @@
 # without external dependencies.
 #
 # @since 16/07/2026
-# @updated 16/07/2026
+# @updated 23/07/2026
 #
 # ---------- PACKAGE
 [package]
 name = "beaudy-a11y"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 
 # ---------- DEPENDENCIES
