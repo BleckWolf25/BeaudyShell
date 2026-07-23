@@ -5,14 +5,14 @@ Please review the policy below regarding supported versions and reporting vulner
 
 ## Supported Versions
 
-Security updates and vulnerability patches are exclusively provided for the latest Long‑Term Support (LTS) release.
+Security updates and vulnerability patches are exclusively provided for the latest release version.
 
 | Version | Supported | Notes |
 | ------- | --------- | ----- |
-| > **0.1.0** (current) | Yes | Active support for security vulnerabilities. |
-| < 0.1.0 | ❌ No | Please upgrade to the latest version. |
+| >= **0.2.0** (current) | Yes | Active support for security vulnerabilities. |
+| < 0.2.0 | ❌ No | Please upgrade to the latest version. |
 
-> ⚠️ **Important:** To report a valid security issue, your environment **must** be actively running on the latest release. Bugs or vulnerabilities found on older, modified, or deprecated branches will not be triaged.
+> ⚠️ **Important:** To report a valid security issue, your environment **must** be actively running on the latest supported release. Bugs or vulnerabilities found on older, modified, or deprecated branches will not be triaged.
 
 ---
 
@@ -20,7 +20,7 @@ Security updates and vulnerability patches are exclusively provided for the late
 
 If you discover a security vulnerability, please **do not** disclose it publicly via GitHub Issues or Pull Requests.
 
-1. **Verify:** Ensure the vulnerability is reproducible on a clean install of version >**2.0.0**.
+1. **Verify:** Ensure the vulnerability is reproducible on a clean install of version >= **0.2.0**.
 2. **Report:** Send a detailed report via email to **<joao.coutinho08@icloud.com>**.
 3. **Include Details:**
    - A clear description of the vulnerability.
@@ -29,5 +29,5 @@ If you discover a security vulnerability, please **do not** disclose it publicly
 
 ### Response Timeline
 
-You will receive an acknowledgment of your report within **48–72 hours**.
+You will receive an acknowledgment of your report within **48–72 hours**.
 If the vulnerability is verified as valid and within the scope of this project, a patch will be prepared and pushed to the `main` branch as a high priority.

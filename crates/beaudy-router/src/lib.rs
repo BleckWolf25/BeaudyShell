@@ -13,7 +13,7 @@
  * PTY process execution with bidirectional I/O threading.
  *
  * @since 16/07/2026
- * @updated 16/07/2026
+ * @updated 23/07/2026
  */
 // ---------- IMPORTS
 use crossterm::terminal::size;
@@ -35,82 +35,114 @@ fn get_oldpwd() -> &'static Mutex<Option<PathBuf>> {
     OLDPWD.get_or_init(|| Mutex::new(None))
 }
 
-// ---------- COMMAND ROUTING
-pub fn execute_interactive_command(input: &str) -> Result<i32, Box<dyn std::error::Error>> {
+// ---------- ENVIRONMENT VARIABLE EXPANSION
+/// Expand environment variables in string ($VAR or ${VAR}).
+///
+/// ```
+/// use beaudy_router::expand_env_vars;
+/// unsafe { std::env::set_var("BEAUDY_TEST_VAR", "world"); }
+/// assert_eq!(expand_env_vars("hello $BEAUDY_TEST_VAR"), "hello world");
+/// ```
+pub fn expand_env_vars(input: &str) -> String {
+    let mut result = String::new();
+    let mut chars = input.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '$' {
+            let mut var_name = String::new();
+            if chars.peek() == Some(&'{') {
+                chars.next();
+                while let Some(&ch) = chars.peek() {
+                    if ch == '}' {
+                        chars.next();
+                        break;
+                    }
+                    var_name.push(ch);
+                    chars.next();
+                }
+            } else {
+                while let Some(&ch) = chars.peek() {
+                    if ch.is_alphanumeric() || ch == '_' {
+                        var_name.push(ch);
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if !var_name.is_empty() {
+                if let Ok(val) = std::env::var(&var_name) {
+                    result.push_str(&val);
+                }
+            } else {
+                result.push('$');
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
+// ---------- STAGE EXECUTION WITH PIPED INPUT / OUTPUT
+fn execute_stage_with_input_output(
+    input: &str,
+    default_shell: &str,
+    aliases: &std::collections::HashMap<String, String>,
+    pipe_input: &[u8],
+    writer: &mut dyn Write,
+) -> Result<i32, Box<dyn std::error::Error>> {
     let trimmed = input.trim();
-    let parts: Vec<&str> = trimmed.split_whitespace().collect();
-    if parts.is_empty() {
+    if trimmed.is_empty() {
         return Ok(0);
+    }
+
+    // Expand alias if applicable
+    let mut parts: Vec<&str> = trimmed.split_whitespace().collect();
+    let alias_expanded;
+    if let Some(aliased) = aliases.get(parts[0]) {
+        alias_expanded = format!("{} {}", aliased, parts[1..].join(" "));
+        parts = alias_expanded.split_whitespace().collect();
     }
 
     let cmd_name = parts[0];
     let args = &parts[1..];
 
-    // ---------- BUILTIN COMMANDS
-    if cmd_name == "bls" {
+    // Builtins handling
+    if cmd_name == "export" {
+        return beaudy_builtins::run_export(args);
+    } else if cmd_name == "alias" {
+        return beaudy_builtins::run_alias(args, aliases);
+    } else if cmd_name == "bls" {
         return beaudy_builtins::run_bls(args);
     } else if cmd_name == "bhelp" {
         return beaudy_builtins::run_bhelp();
+    } else if cmd_name == "bconfig" {
+        return beaudy_builtins::run_bconfig(args);
+    } else if cmd_name == "pwd" {
+        return beaudy_builtins::run_pwd();
+    } else if cmd_name == "bsetup" {
+        return beaudy_builtins::run_bsetup();
+    } else if cmd_name == "bmemo" {
+        return beaudy_builtins::run_bmemo(args);
+    } else if cmd_name == "bcalc" {
+        return beaudy_builtins::run_bcalc(args);
+    } else if cmd_name == "btrash" {
+        return beaudy_builtins::run_btrash(args);
+    } else if cmd_name == "bhash" {
+        return beaudy_builtins::run_bhash(args);
     } else if cmd_name == "cd" {
-        // Determine home directory based on operating system
-        let home_dir = if cfg!(windows) {
-            std::env::var("USERPROFILE").ok()
-        } else {
-            std::env::var("HOME").ok()
-        };
-
-        let target = if args.is_empty() {
-            home_dir.clone().unwrap_or_else(|| ".".to_string())
-        } else {
-            args[0].to_string()
-        };
-
-        let current_dir = std::env::current_dir()?;
-
-        // Expand path shortcuts: ~, -, ~/prefix
-        let target_path = if target == "~" {
-            home_dir.unwrap_or_else(|| ".".to_string())
-        } else if target == "-" {
-            let oldpwd_guard = get_oldpwd().lock().unwrap();
-            if let Some(ref path) = *oldpwd_guard {
-                path.to_string_lossy().into_owned()
-            } else {
-                eprintln!("cd: OLDPWD not set");
-                return Ok(1);
-            }
-        } else if target.starts_with("~/") {
-            if let Some(home) = home_dir {
-                target.replace('~', &home)
-            } else {
-                target
-            }
-        } else {
-            target
-        };
-
-        let target_path_buf = std::path::PathBuf::from(target_path);
-        match std::env::set_current_dir(&target_path_buf) {
-            Ok(_) => {
-                let mut oldpwd_guard = get_oldpwd().lock().unwrap();
-                *oldpwd_guard = Some(current_dir);
-                if args.first().copied() == Some("-") {
-                    println!("{}", std::env::current_dir()?.display());
-                }
-                return Ok(0);
-            }
-            Err(e) => {
-                eprintln!("cd: {}", e);
-                return Ok(1);
-            }
-        }
+        return execute_cd(args);
+    } else if cmd_name == "pushd" {
+        return execute_pushd(args);
+    } else if cmd_name == "popd" {
+        return execute_popd();
+    } else if cmd_name == "dirs" {
+        return execute_dirs();
     }
 
-    // ---------- EXTERNAL COMMAND EXECUTION VIA PTY
+    // External command execution via PTY / subprocess
     let pty_system = native_pty_system();
-
-    // Get the actual terminal size so full-screen apps like vim render correctly
     let (cols, rows) = size().unwrap_or((80, 24));
-
     let pair = pty_system.openpty(PtySize {
         rows,
         cols,
@@ -118,18 +150,24 @@ pub fn execute_interactive_command(input: &str) -> Result<i32, Box<dyn std::erro
         pixel_height: 0,
     })?;
 
-    // Determine target shell based on operating system
-    let shell = if cfg!(windows) {
-        "powershell.exe"
+    let shell = if default_shell.trim().is_empty() {
+        if cfg!(windows) {
+            "powershell.exe"
+        } else {
+            "sh"
+        }
     } else {
-        "sh"
+        default_shell.trim()
     };
+
     let mut cmd = CommandBuilder::new(shell);
     if let Ok(cwd) = std::env::current_dir() {
         cmd.cwd(cwd);
     }
-    if cfg!(windows) {
+    if cfg!(windows) && (shell.contains("powershell") || shell.contains("pwsh")) {
         cmd.args(["-Command", input]);
+    } else if cfg!(windows) && shell.contains("cmd") {
+        cmd.args(["/C", input]);
     } else {
         cmd.args(["-c", input]);
     }
@@ -137,99 +175,258 @@ pub fn execute_interactive_command(input: &str) -> Result<i32, Box<dyn std::erro
     let mut child = pair.slave.spawn_command(cmd)?;
     drop(pair.slave);
 
-    let mut reader = pair.master.try_clone_reader()?;
-    let mut writer = pair.master.take_writer()?;
+    let mut pty_reader = pair.master.try_clone_reader()?;
+    let mut pty_writer = pair.master.take_writer()?;
+
+    if !pipe_input.is_empty() {
+        let _ = pty_writer.write_all(pipe_input);
+        let _ = pty_writer.flush();
+    }
 
     let is_running = Arc::new(AtomicBool::new(true));
 
-    // ---------- OUTPUT THREAD: PTY -> Stdout
+    // Output thread
     let is_running_reader = is_running.clone();
+    let output_buf = Arc::new(Mutex::new(Vec::new()));
+    let output_buf_clone = output_buf.clone();
     let reader_thread = thread::spawn(move || {
         let mut buf = [0u8; 1024];
-        let mut stdout = std::io::stdout();
-
-        while let Ok(n) = reader.read(&mut buf) {
+        while let Ok(n) = pty_reader.read(&mut buf) {
             if n == 0 {
                 break;
             }
-            if stdout.write_all(&buf[..n]).is_err() {
-                break;
-            }
-            if stdout.flush().is_err() {
-                break;
+            if let Ok(mut guard) = output_buf_clone.lock() {
+                guard.extend_from_slice(&buf[..n]);
             }
         }
         is_running_reader.store(false, Ordering::SeqCst);
     });
 
-    // ---------- INPUT THREAD: Stdin -> PTY
-    let is_running_writer = is_running.clone();
-    let writer_thread = thread::spawn(move || {
-        let mut stdin = std::io::stdin();
-        let mut buf = [0u8; 256];
-
-        #[cfg(unix)]
-        use std::os::unix::io::AsRawFd;
-        #[cfg(unix)]
-        let stdin_fd = stdin.as_raw_fd();
-
-        while is_running_writer.load(Ordering::SeqCst) {
-            #[cfg(unix)]
-            {
-                // Use libc::poll to check for raw bytes without blocking
-                let mut pfd = libc::pollfd {
-                    fd: stdin_fd,
-                    events: libc::POLLIN,
-                    revents: 0,
-                };
-
-                // Poll with a 10ms timeout
-                let res = unsafe { libc::poll(&mut pfd, 1, 10) };
-
-                #[allow(clippy::collapsible_if)]
-                if res > 0 && (pfd.revents & libc::POLLIN) != 0 {
-                    if let Ok(n) = stdin.read(&mut buf) {
-                        if n == 0 {
-                            break;
-                        }
-                        if writer.write_all(&buf[..n]).is_err() {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            #[cfg(not(unix))]
-            {
-                // Windows fallback
-                #[allow(clippy::collapsible_if)]
-                if let Ok(true) = crossterm::event::poll(std::time::Duration::from_millis(10)) {
-                    if let Ok(n) = stdin.read(&mut buf) {
-                        if n == 0 {
-                            break;
-                        }
-                        if writer.write_all(&buf[..n]).is_err() {
-                            break;
-                        }
-                    }
-                }
-            }
+    let exit_status = loop {
+        if let Ok(Some(status)) = child.try_wait() {
+            break status;
         }
-    });
+        thread::sleep(std::time::Duration::from_millis(10));
+    };
 
-    // Wait for the child process to finish
-    let exit_status = child.wait()?;
-
-    // Signal threads to shut down
     is_running.store(false, Ordering::SeqCst);
-
-    // Wait for the I/O threads to finish cleanly
     let _ = reader_thread.join();
-    let _ = writer_thread.join();
 
-    // Return 0 for success, 1 for failure (portable-pty's ExitStatus provides `success()`)
+    if let Ok(guard) = output_buf.lock() {
+        let _ = writer.write_all(&guard);
+        let _ = writer.flush();
+    }
+
     let code = if exit_status.success() { 0 } else { 1 };
     Ok(code)
+}
+
+fn execute_cd(args: &[&str]) -> Result<i32, Box<dyn std::error::Error>> {
+    let home_dir = if cfg!(windows) {
+        std::env::var("USERPROFILE").ok()
+    } else {
+        std::env::var("HOME").ok()
+    };
+
+    let target = if args.is_empty() {
+        home_dir.clone().unwrap_or_else(|| ".".to_string())
+    } else {
+        args[0].to_string()
+    };
+
+    let current_dir = std::env::current_dir()?;
+    let target_path = if target == "~" {
+        home_dir.unwrap_or_else(|| ".".to_string())
+    } else if target == "-" {
+        let oldpwd_guard = get_oldpwd().lock().unwrap();
+        if let Some(ref path) = *oldpwd_guard {
+            path.to_string_lossy().into_owned()
+        } else {
+            eprintln!("cd: OLDPWD not set");
+            return Ok(1);
+        }
+    } else if target.starts_with("~/") {
+        if let Some(home) = home_dir {
+            target.replace('~', &home)
+        } else {
+            target
+        }
+    } else {
+        target
+    };
+
+    let target_path_buf = std::path::PathBuf::from(target_path);
+    match std::env::set_current_dir(&target_path_buf) {
+        Ok(_) => {
+            let mut oldpwd_guard = get_oldpwd().lock().unwrap();
+            *oldpwd_guard = Some(current_dir);
+            if args.first().copied() == Some("-") {
+                println!("{}", std::env::current_dir()?.display());
+            }
+            Ok(0)
+        }
+        Err(e) => {
+            eprintln!("cd: {}", e);
+            Ok(1)
+        }
+    }
+}
+
+// ---------- DIRECTORY STACK MANAGEMENT
+static DIR_STACK: OnceLock<Mutex<Vec<PathBuf>>> = OnceLock::new();
+
+fn get_dir_stack() -> &'static Mutex<Vec<PathBuf>> {
+    DIR_STACK.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+fn execute_pushd(args: &[&str]) -> Result<i32, Box<dyn std::error::Error>> {
+    let current = std::env::current_dir()?;
+    let target = if args.is_empty() {
+        if let Some(home) = if cfg!(windows) {
+            std::env::var("USERPROFILE").ok()
+        } else {
+            std::env::var("HOME").ok()
+        } {
+            home
+        } else {
+            ".".to_string()
+        }
+    } else {
+        args[0].to_string()
+    };
+
+    let target_path = PathBuf::from(target);
+    match std::env::set_current_dir(&target_path) {
+        Ok(_) => {
+            let mut stack = get_dir_stack().lock().unwrap();
+            stack.push(current);
+            print_dirs(&stack)?;
+            Ok(0)
+        }
+        Err(e) => {
+            eprintln!("pushd: {}", e);
+            Ok(1)
+        }
+    }
+}
+
+fn execute_popd() -> Result<i32, Box<dyn std::error::Error>> {
+    let mut stack = get_dir_stack().lock().unwrap();
+    if let Some(prev) = stack.pop() {
+        match std::env::set_current_dir(&prev) {
+            Ok(_) => {
+                print_dirs(&stack)?;
+                Ok(0)
+            }
+            Err(e) => {
+                eprintln!("popd: {}", e);
+                Ok(1)
+            }
+        }
+    } else {
+        eprintln!("popd: directory stack empty");
+        Ok(1)
+    }
+}
+
+fn execute_dirs() -> Result<i32, Box<dyn std::error::Error>> {
+    let stack = get_dir_stack().lock().unwrap();
+    print_dirs(&stack)?;
+    Ok(0)
+}
+
+fn print_dirs(stack: &[PathBuf]) -> Result<(), Box<dyn std::error::Error>> {
+    let current = std::env::current_dir()?;
+    let mut dirs_str = current.display().to_string();
+    for dir in stack.iter().rev() {
+        dirs_str.push(' ');
+        dirs_str.push_str(&dir.display().to_string());
+    }
+    println!("{}", dirs_str);
+    Ok(())
+}
+
+// ---------- PIPELINE & REDIRECTION ROUTER
+/// Execute pipeline command string.
+///
+/// ```
+/// use beaudy_router::execute_pipeline;
+/// use std::collections::HashMap;
+/// let aliases = HashMap::new();
+/// let res = execute_pipeline("pwd", "sh", &aliases);
+/// assert!(res.is_ok());
+/// ```
+pub fn execute_pipeline(
+    input: &str,
+    default_shell: &str,
+    aliases: &std::collections::HashMap<String, String>,
+) -> Result<i32, Box<dyn std::error::Error>> {
+    let expanded = expand_env_vars(input.trim());
+    let trimmed = expanded.trim();
+    if trimmed.is_empty() {
+        return Ok(0);
+    }
+
+    // Check redirection: > or >>
+    let (cmd_str, redirect_target, append_mode) = if let Some(idx) = trimmed.rfind(">>") {
+        (trimmed[..idx].trim(), Some(trimmed[idx + 2..].trim()), true)
+    } else if let Some(idx) = trimmed.rfind('>') {
+        (
+            trimmed[..idx].trim(),
+            Some(trimmed[idx + 1..].trim()),
+            false,
+        )
+    } else {
+        (trimmed, None, false)
+    };
+
+    let stages: Vec<&str> = cmd_str.split('|').map(|s| s.trim()).collect();
+    let mut current_input: Vec<u8> = Vec::new();
+    let mut last_code = 0;
+
+    for (i, stage) in stages.iter().enumerate() {
+        let is_last = i == stages.len() - 1;
+        let mut output_buf = Vec::new();
+
+        if is_last && let Some(target) = redirect_target {
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .append(append_mode)
+                .truncate(!append_mode)
+                .open(target)?;
+            last_code = execute_stage_with_input_output(
+                stage,
+                default_shell,
+                aliases,
+                &current_input,
+                &mut file,
+            )?;
+        } else if is_last {
+            last_code = execute_stage_with_input_output(
+                stage,
+                default_shell,
+                aliases,
+                &current_input,
+                &mut std::io::stdout(),
+            )?;
+        } else {
+            last_code = execute_stage_with_input_output(
+                stage,
+                default_shell,
+                aliases,
+                &current_input,
+                &mut output_buf,
+            )?;
+            current_input = output_buf;
+        }
+    }
+
+    Ok(last_code)
+}
+
+pub fn execute_interactive_command(input: &str) -> Result<i32, Box<dyn std::error::Error>> {
+    execute_pipeline(input, "", &std::collections::HashMap::new())
 }
 
 // ---------- TESTS
@@ -268,5 +465,33 @@ mod tests {
         let res = execute_interactive_command("cd /invalid/path/that/does/not/exist/beaudyshell");
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), 1);
+    }
+
+    #[test]
+    #[allow(unsafe_code)]
+    fn test_expand_env_vars() {
+        unsafe {
+            std::env::set_var("BEAUDY_TEST_VAR", "BeaudyVal");
+        }
+        let expanded = expand_env_vars("echo $BEAUDY_TEST_VAR and ${BEAUDY_TEST_VAR}");
+        assert_eq!(expanded, "echo BeaudyVal and BeaudyVal");
+    }
+
+    #[test]
+    fn test_pushd_popd_dirs() {
+        let original_dir = std::env::current_dir().unwrap();
+
+        let res_push = execute_interactive_command("pushd src");
+        assert!(res_push.is_ok());
+        assert_eq!(res_push.unwrap(), 0);
+        assert!(std::env::current_dir().unwrap().ends_with("src"));
+
+        let res_dirs = execute_interactive_command("dirs");
+        assert!(res_dirs.is_ok());
+
+        let res_pop = execute_interactive_command("popd");
+        assert!(res_pop.is_ok());
+        assert_eq!(res_pop.unwrap(), 0);
+        assert_eq!(std::env::current_dir().unwrap(), original_dir);
     }
 }

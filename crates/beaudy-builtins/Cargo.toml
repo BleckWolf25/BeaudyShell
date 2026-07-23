@@ -12,7 +12,7 @@
 # friendly formatting using the ratatui TUI library.
 #
 # @since 16/07/2026
-# @updated 16/07/2026
+# @updated 23/07/2026
 #
 # ---------- CONFIGURATION
 [package]
@@ -23,3 +23,7 @@ edition = "2024"
 # ---------- DEPENDENCIES
 [dependencies]
 ratatui = { workspace = true }
+crossterm = { workspace = true }
+meval = "0.2"
+md5 = "0.7"
+sha2 = "0.10"

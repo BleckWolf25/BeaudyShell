@@ -15,7 +15,7 @@
 # @updated 16/07/2026
 #
 # ---------- CONFIGURATION
-.PHONY: setup build release run test lint fmt clean package
+.PHONY: setup build release run dev test lint fmt clean package
 
 # ---------- DEVELOPMENT COMMANDS
 # Install required Rust components
@@ -33,6 +33,9 @@ release:
 # Run the BeaudyShell entry point
 run:
 	cargo run -p beaudy-entry
+
+# Alias for run / dev workflow
+dev: run
 
 # Run all tests across all crates
 test:
