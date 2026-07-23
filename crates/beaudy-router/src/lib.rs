@@ -433,12 +433,17 @@ pub fn execute_interactive_command(input: &str) -> Result<i32, Box<dyn std::erro
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static CWD_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_cd_traversal() {
+        let _guard = CWD_MUTEX.lock().unwrap();
+        let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _ = std::env::set_current_dir(&crate_dir);
         let original_dir = std::env::current_dir().unwrap();
 
-        // Create a temporary directory or just go to a known subfolder
         // "src" should always exist in crate
         let res = execute_interactive_command("cd src");
         assert!(res.is_ok());
@@ -455,12 +460,13 @@ mod tests {
         let back_dir = std::env::current_dir().unwrap();
         assert_eq!(back_dir, original_dir);
 
-        // Restore dir just in case
+        // Restore dir
         let _ = std::env::set_current_dir(original_dir);
     }
 
     #[test]
     fn test_cd_invalid() {
+        let _guard = CWD_MUTEX.lock().unwrap();
         // Test that invalid directory returns error code
         let res = execute_interactive_command("cd /invalid/path/that/does/not/exist/beaudyshell");
         assert!(res.is_ok());
@@ -479,6 +485,9 @@ mod tests {
 
     #[test]
     fn test_pushd_popd_dirs() {
+        let _guard = CWD_MUTEX.lock().unwrap();
+        let crate_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let _ = std::env::set_current_dir(&crate_dir);
         let original_dir = std::env::current_dir().unwrap();
 
         let res_push = execute_interactive_command("pushd src");
