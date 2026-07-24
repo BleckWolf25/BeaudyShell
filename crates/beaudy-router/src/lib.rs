@@ -167,7 +167,7 @@ fn execute_stage_with_input_output(
         cmd.cwd(cwd);
     }
     if cfg!(windows) && (shell.contains("powershell") || shell.contains("pwsh")) {
-        cmd.args(["-Command", input]);
+        cmd.args(["-NoProfile", "-NonInteractive", "-Command", input]);
     } else if cfg!(windows) && shell.contains("cmd") {
         cmd.args(["/C", input]);
     } else {
@@ -221,9 +221,20 @@ fn execute_stage_with_input_output(
         let _ = tx.send(());
     });
 
+    let start_wait = std::time::Instant::now();
     let exit_status = loop {
-        if let Ok(Some(status)) = child.try_wait() {
-            break status;
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) => {}
+            Err(e) => {
+                eprintln!("beaudy: child try_wait error: {e}");
+                break portable_pty::ExitStatus::with_exit_code(1);
+            }
+        }
+        if start_wait.elapsed() > std::time::Duration::from_secs(15) {
+            eprintln!("beaudy: process execution timed out");
+            let _ = child.kill();
+            break portable_pty::ExitStatus::with_exit_code(124);
         }
         thread::sleep(std::time::Duration::from_millis(10));
     };
