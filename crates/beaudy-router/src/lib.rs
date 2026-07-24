@@ -13,7 +13,7 @@
  * PTY process execution with bidirectional I/O threading.
  *
  * @since 16/07/2026
- * @updated 23/07/2026
+ * @updated 24/07/2026
  */
 // ---------- IMPORTS
 use crossterm::terminal::size;

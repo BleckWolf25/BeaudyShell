@@ -15,7 +15,8 @@ Format follows [Keep a Changelog](http://keepachangelog.com/), versioning follow
 - **Auto-completion & Highlighting for `clear`/`cls`**: Registered `clear` and `cls` in built-in arrays, autocompletion suggestion engine, and cyan syntax highlighter.
 
 ### Fixed
-- **PTY Master Handle Deadlock on Command Exit**: Resolved a bug in `beaudy-router` where the master PTY handle remained open after process execution, causing output threads to hang and freeze the shell on fast-exiting or missing commands.
+- **PTY Master Handle Deadlock & Timeout Guard**: Resolved a bug in `beaudy-router` where output threads could hang on process exit. Replaced blocking reader thread `join()` with a 200ms channel timeout and added a 15-second process timeout guard to prevent infinite test hangs during CI runs.
+- **Non-Interactive Windows Subshell Execution**: Added `-NoProfile` and `-NonInteractive` flags when spawning `powershell.exe` / `pwsh` subshells on Windows to prevent PTY input locks in automated tests and non-interactive shell environments.
 - **Graceful Subprocess Error Recovery**: Handled shell spawn failures safely to output `beaudy: command not found or shell error: ...` with exit code `127` instead of crashing the REPL loop.
 - **Raw-Mode Line Ending Normalization**: Converted isolated `\n` line breaks in subprocess output to `\r\n` to maintain clean terminal formatting under crossterm raw mode.
 
