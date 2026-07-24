@@ -138,6 +138,8 @@ fn execute_stage_with_input_output(
         return execute_popd();
     } else if cmd_name == "dirs" {
         return execute_dirs();
+    } else if cmd_name == "clear" || cmd_name == "cls" {
+        return beaudy_builtins::run_clear();
     }
 
     // External command execution via PTY / subprocess
@@ -172,15 +174,30 @@ fn execute_stage_with_input_output(
         cmd.args(["-c", input]);
     }
 
-    let mut child = pair.slave.spawn_command(cmd)?;
+    let mut child = match pair.slave.spawn_command(cmd) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("beaudy: command not found or shell error: {e}");
+            return Ok(127);
+        }
+    };
     drop(pair.slave);
+    let master = pair.master;
 
-    let mut pty_reader = pair.master.try_clone_reader()?;
-    let mut pty_writer = pair.master.take_writer()?;
+    let mut pty_reader = match master.try_clone_reader() {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("beaudy: PTY reader error: {e}");
+            return Ok(1);
+        }
+    };
 
+    #[allow(clippy::collapsible_if)]
     if !pipe_input.is_empty() {
-        let _ = pty_writer.write_all(pipe_input);
-        let _ = pty_writer.flush();
+        if let Ok(mut pty_writer) = master.take_writer() {
+            let _ = pty_writer.write_all(pipe_input);
+            let _ = pty_writer.flush();
+        }
     }
 
     let is_running = Arc::new(AtomicBool::new(true));
@@ -209,15 +226,33 @@ fn execute_stage_with_input_output(
         thread::sleep(std::time::Duration::from_millis(10));
     };
 
+    // Close master PTY handle so pty_reader receives EOF and reader_thread exits cleanly
+    drop(master);
+
     is_running.store(false, Ordering::SeqCst);
     let _ = reader_thread.join();
 
     if let Ok(guard) = output_buf.lock() {
-        let _ = writer.write_all(&guard);
+        // Normalize isolated \n to \r\n for raw mode compatibility
+        let mut normalized = Vec::with_capacity(guard.len());
+        let mut prev_was_cr = false;
+        for &b in guard.iter() {
+            if b == b'\n' && !prev_was_cr {
+                normalized.push(b'\r');
+            }
+            normalized.push(b);
+            prev_was_cr = b == b'\r';
+        }
+        let _ = writer.write_all(&normalized);
         let _ = writer.flush();
     }
 
-    let code = if exit_status.success() { 0 } else { 1 };
+    let code = if exit_status.success() {
+        0
+    } else {
+        let c = exit_status.exit_code();
+        if c == 0 { 1 } else { c as i32 }
+    };
     Ok(code)
 }
 
@@ -502,5 +537,38 @@ mod tests {
         assert!(res_pop.is_ok());
         assert_eq!(res_pop.unwrap(), 0);
         assert_eq!(std::env::current_dir().unwrap(), original_dir);
+    }
+
+    #[test]
+    fn test_nonexistent_command() {
+        let res = execute_pipeline(
+            "nonexistent_command_123456789",
+            "sh",
+            &std::collections::HashMap::new(),
+        );
+        assert!(res.is_ok());
+        assert_ne!(res.unwrap(), 0);
+    }
+
+    #[test]
+    fn test_invalid_shell() {
+        let res = execute_pipeline(
+            "ls",
+            "nonexistent_shell_xyz_999",
+            &std::collections::HashMap::new(),
+        );
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), 127);
+    }
+
+    #[test]
+    fn test_clear_builtin() {
+        let res_clear = execute_pipeline("clear", "sh", &std::collections::HashMap::new());
+        assert!(res_clear.is_ok());
+        assert_eq!(res_clear.unwrap(), 0);
+
+        let res_cls = execute_pipeline("cls", "sh", &std::collections::HashMap::new());
+        assert!(res_cls.is_ok());
+        assert_eq!(res_cls.unwrap(), 0);
     }
 }

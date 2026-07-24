@@ -221,7 +221,7 @@ fn get_path_commands() -> &'static HashSet<String> {
 fn command_exists(cmd: &str) -> bool {
     let common = [
         "git", "cargo", "npm", "node", "python", "pip", "ls", "cd", "pwd", "mkdir", "rm", "cp",
-        "mv", "clear",
+        "mv", "clear", "cls",
     ];
     if common.contains(&cmd) {
         return true;
@@ -264,7 +264,7 @@ fn print_highlighted(stdout: &mut io::Stdout, input: &str) -> io::Result<()> {
         // Color code: cyan for builtins, green for existing commands, red for unknown
         let is_builtin = [
             "bls", "bhelp", "exit", "bconfig", "pwd", "bsetup", "cd", "bmemo", "bcalc", "btrash",
-            "bhash",
+            "bhash", "pushd", "popd", "dirs", "export", "alias", "unalias", "clear", "cls",
         ]
         .contains(&first_word);
         let exists = is_builtin || command_exists(first_word);
@@ -316,7 +316,8 @@ fn get_suggestion(input: &str) -> Option<String> {
         } else {
             let builtins = [
                 "bls", "bhelp", "exit", "bconfig", "pwd", "bsetup", "cd", "bmemo", "bcalc",
-                "btrash", "bhash", "pushd", "popd", "dirs", "export", "alias", "unalias",
+                "btrash", "bhash", "pushd", "popd", "dirs", "export", "alias", "unalias", "clear",
+                "cls",
             ];
             for b in &builtins {
                 if b.starts_with(cmd) && *b != cmd {
@@ -368,7 +369,8 @@ fn get_candidates(input: &str) -> Vec<String> {
         } else {
             let builtins = [
                 "bls", "bhelp", "exit", "bconfig", "pwd", "bsetup", "cd", "bmemo", "bcalc",
-                "btrash", "bhash", "pushd", "popd", "dirs", "export", "alias", "unalias",
+                "btrash", "bhash", "pushd", "popd", "dirs", "export", "alias", "unalias", "clear",
+                "cls",
             ];
             for b in &builtins {
                 if b.starts_with(cmd) {
@@ -986,6 +988,12 @@ mod tests {
     fn test_get_candidates_builtin() {
         let candidates = get_candidates("bl");
         assert!(candidates.contains(&"bls".to_string()));
+    }
+
+    #[test]
+    fn test_get_candidates_clear() {
+        let candidates = get_candidates("clea");
+        assert!(candidates.contains(&"clear".to_string()));
     }
 
     #[test]

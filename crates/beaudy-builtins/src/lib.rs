@@ -19,7 +19,7 @@ pub mod builtins;
 
 pub use builtins::{
     run_alias, run_bcalc, run_bconfig, run_bhash, run_bhelp, run_bls, run_bmemo, run_bsetup,
-    run_btrash, run_export, run_pwd,
+    run_btrash, run_clear, run_export, run_pwd,
 };
 
 // ---------- TESTS
@@ -32,6 +32,13 @@ mod tests {
     #[test]
     fn test_bhelp_returns_zero() {
         let result = run_bhelp();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 0);
+    }
+
+    #[test]
+    fn test_clear_returns_zero() {
+        let result = run_clear();
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 0);
     }

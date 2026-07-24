@@ -8,6 +8,17 @@ Format follows [Keep a Changelog](http://keepachangelog.com/), versioning follow
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-24
+
+### Added
+- **Native `clear` & `cls` Built-in Support**: Added built-in screen clearing commands (`clear` and `cls`) to clear terminal view cleanly without depending on external host binaries.
+- **Auto-completion & Highlighting for `clear`/`cls`**: Registered `clear` and `cls` in built-in arrays, autocompletion suggestion engine, and cyan syntax highlighter.
+
+### Fixed
+- **PTY Master Handle Deadlock on Command Exit**: Resolved a bug in `beaudy-router` where the master PTY handle remained open after process execution, causing output threads to hang and freeze the shell on fast-exiting or missing commands.
+- **Graceful Subprocess Error Recovery**: Handled shell spawn failures safely to output `beaudy: command not found or shell error: ...` with exit code `127` instead of crashing the REPL loop.
+- **Raw-Mode Line Ending Normalization**: Converted isolated `\n` line breaks in subprocess output to `\r\n` to maintain clean terminal formatting under crossterm raw mode.
+
 ## [0.2.0] - 2026-07-23
 
 ### Added

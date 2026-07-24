@@ -249,6 +249,7 @@ pub fn run_bhelp() -> Result<i32, Box<dyn std::error::Error>> {
     println!("  export [K=V] - Set or view environment variables.");
     println!("  alias [K=V]  - Set or view command aliases.");
     println!("  unalias <K>  - Remove a command alias.");
+    println!("  clear / cls  - Clears the terminal screen.");
     println!("  bhelp        - Displays this help screen.");
     println!("  exit         - Exits the shell.\r\n");
     println!("Keyboard Shortcuts:");
@@ -779,5 +780,21 @@ pub fn run_alias(
         }
         return Ok(0);
     }
+    Ok(0)
+}
+
+/// Clears the terminal screen.
+///
+/// ```
+/// use beaudy_builtins::run_clear;
+/// let res = run_clear();
+/// assert_eq!(res.unwrap(), 0);
+/// ```
+pub fn run_clear() -> Result<i32, Box<dyn std::error::Error>> {
+    crossterm::execute!(
+        std::io::stdout(),
+        crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+        crossterm::cursor::MoveTo(0, 0)
+    )?;
     Ok(0)
 }
