@@ -200,13 +200,14 @@ fn execute_stage_with_input_output(
         }
     }
 
+    let (tx, rx) = std::sync::mpsc::channel();
     let is_running = Arc::new(AtomicBool::new(true));
 
     // Output thread
     let is_running_reader = is_running.clone();
     let output_buf = Arc::new(Mutex::new(Vec::new()));
     let output_buf_clone = output_buf.clone();
-    let reader_thread = thread::spawn(move || {
+    let _reader_thread = thread::spawn(move || {
         let mut buf = [0u8; 1024];
         while let Ok(n) = pty_reader.read(&mut buf) {
             if n == 0 {
@@ -217,6 +218,7 @@ fn execute_stage_with_input_output(
             }
         }
         is_running_reader.store(false, Ordering::SeqCst);
+        let _ = tx.send(());
     });
 
     let exit_status = loop {
@@ -230,7 +232,7 @@ fn execute_stage_with_input_output(
     drop(master);
 
     is_running.store(false, Ordering::SeqCst);
-    let _ = reader_thread.join();
+    let _ = rx.recv_timeout(std::time::Duration::from_millis(200));
 
     if let Ok(guard) = output_buf.lock() {
         // Normalize isolated \n to \r\n for raw mode compatibility
