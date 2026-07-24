@@ -388,7 +388,7 @@ fn print_dirs(stack: &[PathBuf]) -> Result<(), Box<dyn std::error::Error>> {
 /// use beaudy_router::execute_pipeline;
 /// use std::collections::HashMap;
 /// let aliases = HashMap::new();
-/// let res = execute_pipeline("pwd", "sh", &aliases);
+/// let res = execute_pipeline("pwd", "", &aliases);
 /// assert!(res.is_ok());
 /// ```
 pub fn execute_pipeline(
@@ -543,7 +543,7 @@ mod tests {
     fn test_nonexistent_command() {
         let res = execute_pipeline(
             "nonexistent_command_123456789",
-            "sh",
+            "",
             &std::collections::HashMap::new(),
         );
         assert!(res.is_ok());
@@ -563,11 +563,11 @@ mod tests {
 
     #[test]
     fn test_clear_builtin() {
-        let res_clear = execute_pipeline("clear", "sh", &std::collections::HashMap::new());
+        let res_clear = execute_pipeline("clear", "", &std::collections::HashMap::new());
         assert!(res_clear.is_ok());
         assert_eq!(res_clear.unwrap(), 0);
 
-        let res_cls = execute_pipeline("cls", "sh", &std::collections::HashMap::new());
+        let res_cls = execute_pipeline("cls", "", &std::collections::HashMap::new());
         assert!(res_cls.is_ok());
         assert_eq!(res_cls.unwrap(), 0);
     }
