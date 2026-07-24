@@ -9,8 +9,8 @@ Security updates and vulnerability patches are exclusively provided for the late
 
 | Version | Supported | Notes |
 | ------- | --------- | ----- |
-| >= **0.2.0** (current) | Yes | Active support for security vulnerabilities. |
-| < 0.2.0 | ❌ No | Please upgrade to the latest version. |
+| >= **0.2.1** (current) | Yes | Active support for security vulnerabilities. |
+| < 0.2.1 | ❌ No | Please upgrade to the latest version. |
 
 > ⚠️ **Important:** To report a valid security issue, your environment **must** be actively running on the latest supported release. Bugs or vulnerabilities found on older, modified, or deprecated branches will not be triaged.
 
@@ -20,7 +20,7 @@ Security updates and vulnerability patches are exclusively provided for the late
 
 If you discover a security vulnerability, please **do not** disclose it publicly via GitHub Issues or Pull Requests.
 
-1. **Verify:** Ensure the vulnerability is reproducible on a clean install of version >= **0.2.0**.
+1. **Verify:** Ensure the vulnerability is reproducible on a clean install of version >= **0.2.1**.
 2. **Report:** Send a detailed report via email to **<joao.coutinho08@icloud.com>**.
 3. **Include Details:**
    - A clear description of the vulnerability.
