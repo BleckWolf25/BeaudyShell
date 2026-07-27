@@ -25,5 +25,5 @@ edition = "2024"
 ratatui = { workspace = true }
 crossterm = { workspace = true }
 meval = "0.2"
-md5 = "0.7"
+md5 = "0.8"
 sha2 = "0.10"
