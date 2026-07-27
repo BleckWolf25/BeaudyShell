@@ -26,4 +26,4 @@ ratatui = { workspace = true }
 crossterm = { workspace = true }
 meval = "0.2"
 md5 = "0.7"
-sha2 = "0.10"
+sha2 = "0.11"
